@@ -1,0 +1,9 @@
+# Ignore all .env files
+**/.env
+
+# Node.js
+**/node_modules
+**/dist
+
+# Go
+*.exe
