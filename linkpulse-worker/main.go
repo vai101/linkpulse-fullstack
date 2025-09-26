@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt" // Added this missing import
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -51,6 +53,22 @@ func main() {
 		log.Fatalf("Unable to load AWS SDK config: %v", err)
 	}
 	sqsClient := sqs.NewFromConfig(awsCfg)
+
+	// --- START of HEALTH CHECK SERVER ---
+	go func() {
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "Worker is alive and running.")
+		})
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8081"
+		}
+		log.Printf("Health check server starting on port %s", port)
+		if err := http.ListenAndServe(":"+port, nil); err != nil {
+			log.Printf("Health check server failed: %v", err)
+		}
+	}()
+	// --- END of HEALTH CHECK SERVER ---
 
 	log.Println("Worker started. Listening for messages...")
 
