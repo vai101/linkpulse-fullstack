@@ -8,14 +8,13 @@ function App() {
   const [longUrl, setLongUrl] = useState('');
   const [newShortUrl, setNewShortUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // New state for the copy button
   const [copied, setCopied] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL;
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const fetchAnalytics = useCallback(() => {
+    setIsLoading(true); // Set loading to true when we fetch
     fetch(API_URL)
       .then(response => response.json())
       .then(data => {
@@ -32,10 +31,24 @@ function App() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
+  // This new useEffect hook listens for when the tab becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchAnalytics();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchAnalytics]);
+
+
   const handleCopy = () => {
     navigator.clipboard.writeText(newShortUrl);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSubmit = async (event) => {
