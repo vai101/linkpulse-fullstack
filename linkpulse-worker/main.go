@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -21,7 +22,6 @@ func main() {
 		log.Fatal("DATABASE_URL must be set")
 	}
 
-	// Add debug logging to see what the worker is actually getting
 	log.Printf("DEBUG WORKER - DATABASE_URL: %s", dbConnStr)
 	log.Printf("DEBUG WORKER - Length: %d", len(dbConnStr))
 
@@ -32,7 +32,17 @@ func main() {
 
 	log.Printf("DEBUG WORKER - SQS_QUEUE_URL: %s", queueURL)
 
-	dbpool, err := pgxpool.New(context.Background(), dbConnStr)
+	// 1. Parse the connection string into a config object
+	pgxConfig, err := pgxpool.ParseConfig(dbConnStr)
+	if err != nil {
+		log.Fatalf("Unable to parse database connection string: %v", err)
+	}
+
+	// 2. Set the simple protocol mode on the config object
+	pgxConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
+	// 3. Create the connection pool from the MODIFIED config object
+	dbpool, err := pgxpool.NewWithConfig(context.Background(), pgxConfig)
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v", err)
 	}

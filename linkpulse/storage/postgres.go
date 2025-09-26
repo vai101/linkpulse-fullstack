@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -23,7 +24,15 @@ type PostgresStore struct {
 }
 
 func NewPostgresStore(dbConnStr, queueURL string) (*PostgresStore, error) {
-	dbpool, err := pgxpool.New(context.Background(), dbConnStr)
+	// FIX: Renamed the local variable from 'config' to 'pgxConfig'
+	pgxConfig, err := pgxpool.ParseConfig(dbConnStr)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse database connection string: %w", err)
+	}
+
+	pgxConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
+	dbpool, err := pgxpool.NewWithConfig(context.Background(), pgxConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create connection pool: %w", err)
 	}
@@ -32,6 +41,7 @@ func NewPostgresStore(dbConnStr, queueURL string) (*PostgresStore, error) {
 	}
 	log.Println("Successfully connected to the database.")
 
+	// Now, 'config.LoadDefaultConfig' correctly refers to the AWS package
 	awsCfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("unable to load AWS SDK config: %w", err)
@@ -45,6 +55,7 @@ func NewPostgresStore(dbConnStr, queueURL string) (*PostgresStore, error) {
 	}, nil
 }
 
+// ... (All other functions in this file remain the same) ...
 func (s *PostgresStore) PublishClickEvent(shortCode string) error {
 	_, err := s.sqsClient.SendMessage(context.Background(), &sqs.SendMessageInput{
 		QueueUrl:    &s.queueURL,
@@ -56,13 +67,11 @@ func (s *PostgresStore) PublishClickEvent(shortCode string) error {
 	log.Printf("Successfully sent click event for %s to SQS.", shortCode)
 	return nil
 }
-
 func (s *PostgresStore) Save(id uint64, shortCode, longURL string) error {
 	query := "INSERT INTO urls (id, short_code, long_url) VALUES ($1, $2, $3)"
 	_, err := s.db.Exec(context.Background(), query, id, shortCode, longURL)
 	return err
 }
-
 func (s *PostgresStore) Load(shortCode string) (string, error) {
 	var longURL string
 	query := "SELECT long_url FROM urls WHERE short_code = $1"
@@ -72,11 +81,9 @@ func (s *PostgresStore) Load(shortCode string) (string, error) {
 	}
 	return longURL, nil
 }
-
 func (s *PostgresStore) Close() {
 	s.db.Close()
 }
-
 func (s *PostgresStore) GetAnalytics() ([]AnalyticsData, error) {
 	query := `
 		SELECT u.short_code, u.long_url, COUNT(c.id) as click_count
@@ -100,7 +107,6 @@ func (s *PostgresStore) GetAnalytics() ([]AnalyticsData, error) {
 	}
 	return results, nil
 }
-
 func (s *PostgresStore) GetLastID() (uint64, error) {
 	var lastID uint64
 	query := "SELECT COALESCE(MAX(id), 0) FROM urls"
