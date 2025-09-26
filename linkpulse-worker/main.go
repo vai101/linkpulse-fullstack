@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -17,35 +17,32 @@ func main() {
 		log.Println("No .env file found")
 	}
 
-	dbConnStr := os.Getenv("DATABASE_URL")
-	if dbConnStr == "" {
-		log.Fatal("DATABASE_URL must be set")
-	}
-
-	log.Printf("DEBUG WORKER - DATABASE_URL: %s", dbConnStr)
-	log.Printf("DEBUG WORKER - Length: %d", len(dbConnStr))
-
 	queueURL := os.Getenv("SQS_QUEUE_URL")
 	if queueURL == "" {
 		log.Fatal("SQS_QUEUE_URL must be set")
 	}
 
-	log.Printf("DEBUG WORKER - SQS_QUEUE_URL: %s", queueURL)
-
-	// 1. Parse the connection string into a config object
-	pgxConfig, err := pgxpool.ParseConfig(dbConnStr)
-	if err != nil {
-		log.Fatalf("Unable to parse database connection string: %v", err)
+	// --- START RETRY LOGIC ---
+	var dbpool *pgxpool.Pool
+	var err error
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		dbConnStr := os.Getenv("DATABASE_URL")
+		if dbConnStr == "" {
+			log.Fatal("DATABASE_URL must be set")
+		}
+		dbpool, err = pgxpool.New(context.Background(), dbConnStr)
+		if err == nil {
+			break // Success!
+		}
+		log.Printf("Worker failed to connect to database (attempt %d/%d): %v", i+1, maxRetries, err)
+		time.Sleep(5 * time.Second)
 	}
-
-	// 2. Set the simple protocol mode on the config object
-	pgxConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
-
-	// 3. Create the connection pool from the MODIFIED config object
-	dbpool, err := pgxpool.NewWithConfig(context.Background(), pgxConfig)
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+		log.Fatalf("Worker failed to connect to database after %d attempts: %v", maxRetries, err)
 	}
+	// --- END RETRY LOGIC ---
+
 	defer dbpool.Close()
 	log.Println("Successfully connected to the database.")
 

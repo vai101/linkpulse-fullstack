@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/joho/godotenv"
-	// These are the corrected, full import paths
 	"github.com/vai101/linkpulse/shortener"
 	"github.com/vai101/linkpulse/storage"
 )
@@ -29,21 +29,27 @@ func main() {
 	if dbConnStr == "" {
 		log.Fatal("DATABASE_URL environment variable is not set")
 	}
-
-	log.Printf("DEBUG API - DATABASE_URL: %s", dbConnStr)
-	log.Printf("DEBUG API - Length: %d", len(dbConnStr))
-
 	queueURL := os.Getenv("SQS_QUEUE_URL")
 	if queueURL == "" {
 		log.Fatal("SQS_QUEUE_URL environment variable is not set")
 	}
 
-	log.Printf("DEBUG API - SQS_QUEUE_URL: %s", queueURL)
-
-	store, err := storage.NewPostgresStore(dbConnStr, queueURL)
-	if err != nil {
-		log.Fatalf("Failed to initialize store: %v", err)
+	var store *storage.PostgresStore
+	var err error
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		// This is the corrected line with both arguments
+		store, err = storage.NewPostgresStore(dbConnStr, queueURL)
+		if err == nil {
+			break // Success!
+		}
+		log.Printf("Failed to connect to store (attempt %d/%d): %v", i+1, maxRetries, err)
+		time.Sleep(5 * time.Second)
 	}
+	if err != nil {
+		log.Fatalf("Failed to connect to store after %d attempts: %v", maxRetries, err)
+	}
+
 	defer store.Close()
 
 	lastID, err := store.GetLastID()
@@ -64,6 +70,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
+// ... (All other functions in this file remain the same) ...
 func (app *App) handleGetAnalytics(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -79,22 +86,14 @@ func (app *App) handleGetAnalytics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(analytics)
 }
-
-// In linkpulse/main.go
-
 func (app *App) rootHandler(w http.ResponseWriter, r *http.Request) {
-	// Add CORS headers to allow our React app to make requests
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	// Browsers send a "preflight" OPTIONS request first for POST requests.
-	// We need to handle it and send back a 200 OK.
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-
 	if r.URL.Path == "/" {
 		if r.Method == http.MethodPost {
 			app.handleShorten(w, r)
@@ -105,7 +104,6 @@ func (app *App) rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	app.handleRedirect(w, r)
 }
-
 func (app *App) handleShorten(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		URL string `json:"url"`
@@ -131,7 +129,6 @@ func (app *App) handleShorten(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }
-
 func (app *App) handleRedirect(w http.ResponseWriter, r *http.Request) {
 	shortCode := r.URL.Path[1:]
 	longURL, err := app.store.Load(shortCode)
