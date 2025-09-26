@@ -106,19 +106,20 @@ function App() {
               <th>Clicks</th>
             </tr>
           </thead>
-          <tbody>
-            {analytics.map(item => (
-              <tr key={item.short_code}>
-                <td>
-                  <a href={`http://localhost:8080/${item.short_code}`} target="_blank" rel="noopener noreferrer">
-                    {item.short_code}
-                  </a>
-                </td>
-                <td className="long-url">{item.long_url}</td>
-                <td>{item.click_count}</td>
-              </tr>
-            ))}
-          </tbody>
+                  <tbody>
+          {analytics.map(item => (
+            <tr key={item.short_code}>
+              <td>
+                {/* This is the corrected line */}
+                <a href={`${import.meta.env.VITE_API_BASE_URL}/${item.short_code}`} target="_blank" rel="noopener noreferrer">
+                  {item.short_code}
+                </a>
+              </td>
+              <td className="long-url">{item.long_url}</td>
+              <td>{item.click_count}</td>
+            </tr>
+          ))}
+        </tbody>
         </table>
       )}
     </div>
