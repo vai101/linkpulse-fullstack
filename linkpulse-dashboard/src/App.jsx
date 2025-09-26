@@ -14,11 +14,10 @@ function App() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const fetchAnalytics = useCallback(() => {
-    // We don't want to show the full "Loading..." text on every poll
-    // Only show it on the very first load.
-    // setIsLoading(true); 
+    // Add a unique timestamp to the URL to bypass any caches
+    const cacheBustingUrl = `${API_URL}?t=${new Date().getTime()}`;
 
-    fetch(API_URL)
+    fetch(cacheBustingUrl)
       .then(response => response.json())
       .then(data => {
         setAnalytics(data);
@@ -27,22 +26,15 @@ function App() {
         setError(error.message);
       })
       .finally(() => {
-        setIsLoading(false); // Mark initial load as complete
+        setIsLoading(false);
       });
   }, [API_URL]);
 
-  // This useEffect hook now sets up an interval to poll for new data
   useEffect(() => {
-    fetchAnalytics(); // Fetch data on initial load
-    
-    // Set up an interval to fetch data every 5 seconds
+    fetchAnalytics(); 
     const intervalId = setInterval(fetchAnalytics, 5000);
-
-    // This is a cleanup function that runs when the component is removed
-    // It's important to clear the interval to prevent memory leaks
     return () => clearInterval(intervalId);
   }, [fetchAnalytics]);
-
 
   const handleCopy = () => {
     navigator.clipboard.writeText(newShortUrl);
@@ -72,7 +64,7 @@ function App() {
       const data = await response.json();
       setNewShortUrl(data.short_url);
       setLongUrl('');
-      fetchAnalytics(); // Immediately fetch after creating a new link
+      fetchAnalytics();
     } catch (err) {
       setError(err.message);
     } finally {
