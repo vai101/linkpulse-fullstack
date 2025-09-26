@@ -1,27 +1,132 @@
-/* src/App.css */
+:root {
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-400: #94a3b8;
+  --slate-600: #475569;
+  --slate-800: #1e293b;
+  --sky-500: #0ea5e9;
+  --sky-600: #0284c7;
+}
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #f4f7f9;
-  color: #333;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--slate-50);
+  color: var(--slate-800);
   margin: 0;
   padding: 2rem;
 }
 
 .container {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
-  background-color: #fff;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2.5rem;
 }
 
 h1 {
-  color: #1a202c;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 0.5rem;
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: var(--slate-600);
+  margin-top: 0;
+}
+
+main {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.url-form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.url-form input {
+  flex-grow: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  transition: box-shadow 0.2s;
+}
+.url-form input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+  border-color: var(--sky-500);
+}
+
+.url-form button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background-color: var(--sky-500);
+  color: white;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.url-form button:hover {
+  background-color: var(--sky-600);
+}
+.url-form button:disabled {
+  background-color: var(--slate-400);
+  cursor: not-allowed;
+}
+
+.result {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: var(--slate-100);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'SF Mono', 'Courier New', monospace;
+}
+
+.result a {
+  color: var(--sky-600);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.copy-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--slate-200);
+  background-color: #fff;
+  color: var(--slate-600);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.copy-button:hover {
+  background-color: var(--slate-50);
+}
+
+h2 {
+  margin-top: 3rem;
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--slate-200);
+  padding-bottom: 0.75rem;
   margin-bottom: 1.5rem;
+}
+
+.table-container {
+  overflow-x: auto;
 }
 
 table {
@@ -32,31 +137,47 @@ table {
 th, td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--slate-100);
 }
 
 th {
-  background-color: #f7fafc;
-  font-weight: 600;
+  color: var(--slate-600);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-tbody tr:hover {
-  background-color: #f7fafc;
+tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .long-url {
-  max-width: 300px;
+  max-width: 250px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #718096;
+}
+.long-url span {
+  color: var(--slate-400);
 }
 
-a {
-  color: #4299e1;
+td a {
+  color: var(--sky-500);
+  font-weight: 600;
   text-decoration: none;
 }
-
-a:hover {
+td a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 1rem;
+  }
+  main {
+    padding: 1.5rem;
+  }
+  h1 {
+    font-size: 1.875rem;
+  }
 }
