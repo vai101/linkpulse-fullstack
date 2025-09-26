@@ -13,22 +13,23 @@ function App() {
   const API_URL = import.meta.env.VITE_API_URL;
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const fetchAnalytics = useCallback(() => {
-    // Add a unique timestamp to the URL to bypass any caches
-    const cacheBustingUrl = `${API_URL}?t=${new Date().getTime()}`;
+ const fetchAnalytics = useCallback(() => {
+  const cacheBustingUrl = `${API_URL}?t=${new Date().getTime()}`;
 
-    fetch(cacheBustingUrl)
-      .then(response => response.json())
-      .then(data => {
-        setAnalytics(data);
-      })
-      .catch(error => {
-        setError(error.message);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [API_URL]);
+  fetch(cacheBustingUrl, {
+    method: 'POST', // Add this line
+  })
+    .then(response => response.json())
+    .then(data => {
+      setAnalytics(data);
+    })
+    .catch(error => {
+      setError(error.message);
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
+}, [API_URL]);
 
   useEffect(() => {
     fetchAnalytics(); 

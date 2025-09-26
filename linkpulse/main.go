@@ -70,18 +70,20 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
-// ... (All other functions in this file remain the same) ...
 func (app *App) handleGetAnalytics(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	// Change this from GET to POST
+	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
 	analytics, err := app.store.GetAnalytics()
 	if err != nil {
 		log.Printf("Error fetching analytics: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
