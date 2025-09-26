@@ -14,34 +14,33 @@ function App() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const fetchAnalytics = useCallback(() => {
-    setIsLoading(true); // Set loading to true when we fetch
+    // We don't want to show the full "Loading..." text on every poll
+    // Only show it on the very first load.
+    // setIsLoading(true); 
+
     fetch(API_URL)
       .then(response => response.json())
       .then(data => {
         setAnalytics(data);
-        setIsLoading(false);
       })
       .catch(error => {
         setError(error.message);
-        setIsLoading(false);
+      })
+      .finally(() => {
+        setIsLoading(false); // Mark initial load as complete
       });
   }, [API_URL]);
 
+  // This useEffect hook now sets up an interval to poll for new data
   useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+    fetchAnalytics(); // Fetch data on initial load
+    
+    // Set up an interval to fetch data every 5 seconds
+    const intervalId = setInterval(fetchAnalytics, 5000);
 
-  // This new useEffect hook listens for when the tab becomes visible again
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchAnalytics();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    // This is a cleanup function that runs when the component is removed
+    // It's important to clear the interval to prevent memory leaks
+    return () => clearInterval(intervalId);
   }, [fetchAnalytics]);
 
 
@@ -73,7 +72,7 @@ function App() {
       const data = await response.json();
       setNewShortUrl(data.short_url);
       setLongUrl('');
-      fetchAnalytics();
+      fetchAnalytics(); // Immediately fetch after creating a new link
     } catch (err) {
       setError(err.message);
     } finally {
