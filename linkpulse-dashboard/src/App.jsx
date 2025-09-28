@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
@@ -13,29 +13,38 @@ function App() {
   const API_URL = import.meta.env.VITE_API_URL;
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
- const fetchAnalytics = useCallback(() => {
-   const urlToFetch = '/api/analytics';
-
-  ffetch(urlToFetch, {
-    method: 'POST',
-  })
-    .then(response => response.json())
-    .then(data => {
-      setAnalytics(data);
-    })
-    .catch(error => {
-      setError(error.message);
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
-}, [API_URL]);
-
+  // This useEffect hook will run only once when the component mounts
   useEffect(() => {
-    fetchAnalytics(); 
-    const intervalId = setInterval(fetchAnalytics, 5000);
+    const fetchData = () => {
+      // We add a timestamp to every request to bypass any possible cache
+      const urlWithCacheBusting = `${API_URL}?t=${new Date().getTime()}`;
+      
+      fetch(urlWithCacheBusting, { method: 'POST' })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          setAnalytics(data);
+        })
+        .catch(error => {
+          // Don't set an error for polling fails, just log it
+          console.error("Failed to fetch analytics:", error);
+        })
+        .finally(() => {
+          setIsLoading(false); // Only matters on the first load
+        });
+    };
+
+    fetchData(); // Fetch data immediately on load
+    const intervalId = setInterval(fetchData, 5000); // And then fetch every 5 seconds
+
+    // This cleanup function is crucial to stop the polling when you leave the page
     return () => clearInterval(intervalId);
-  }, [fetchAnalytics]);
+  }, [API_URL]);
+
 
   const handleCopy = () => {
     navigator.clipboard.writeText(newShortUrl);
@@ -65,18 +74,20 @@ function App() {
       const data = await response.json();
       setNewShortUrl(data.short_url);
       setLongUrl('');
-      fetchAnalytics();
+      // Manually trigger a fetch right after success
+      const updatedAnalytics = await (await fetch(API_URL, { method: 'POST' })).json();
+      setAnalytics(updatedAnalytics);
     } catch (err) {
       setError(err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   if (error) {
     return <div className="container">Error: {error}</div>;
   }
-
+  
   return (
     <div className="container">
       <header>

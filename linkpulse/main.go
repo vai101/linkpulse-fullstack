@@ -126,7 +126,15 @@ func (app *App) handleShorten(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-	fullShortURL := fmt.Sprintf("http://localhost:8080/%s", shortCode)
+
+	// Get the base URL from an environment variable
+	apiBaseUrl := os.Getenv("API_BASE_URL")
+	if apiBaseUrl == "" {
+		apiBaseUrl = "http://localhost:8080" // A fallback for local dev
+	}
+
+	fullShortURL := fmt.Sprintf("%s/%s", apiBaseUrl, shortCode)
+
 	res := struct {
 		ShortURL string `json:"short_url"`
 	}{ShortURL: fullShortURL}
