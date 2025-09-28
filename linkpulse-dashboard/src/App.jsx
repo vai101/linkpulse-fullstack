@@ -14,10 +14,10 @@ function App() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
  const fetchAnalytics = useCallback(() => {
-  const cacheBustingUrl = `${API_URL}?t=${new Date().getTime()}`;
+   const urlToFetch = '/api/analytics';
 
-  fetch(cacheBustingUrl, {
-    method: 'POST', // Add this line
+  ffetch(urlToFetch, {
+    method: 'POST',
   })
     .then(response => response.json())
     .then(data => {
